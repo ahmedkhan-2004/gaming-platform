@@ -1,0 +1,32 @@
+{
+	"name": "Plither",
+	"version": "1.0.0",
+	"description": "Open source Slither.io server and client",
+	"main": "src/index.js",
+	"dependencies": {
+		"body-parser": "latest",
+		"connect-busboy": "latest",
+		"cookie-parser": "latest",
+		"debug": "latest",
+		"express": "latest",
+		"gaming-platform": "file:../..",
+		"hbs": "latest",
+		"morgan": "latest",
+		"serve-favicon": "latest",
+		"ws": "latest"
+	},
+	"scripts": {
+		"start": "node ./src/index",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/PlitherProject/Plither"
+	},
+	"author": "Oleg Filippov <m@zer0ne.xyz> (http://www.zer0ne.xyz/)",
+	"license": "Apache License 2.0",
+	"bugs": {
+		"url": "https://github.com/PlitherProject/Plither/issues"
+	},
+	"homepage": "https://github.com/PlitherProject/Plither"
+}

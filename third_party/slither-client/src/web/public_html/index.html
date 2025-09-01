@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plither.io</title>
+    <link rel="icon" type="image/png" href="assets/img/favicon.png">
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <!-- Slither CSS -->
+    <link rel="stylesheet" href="assets/css/slither.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: url('assets/img/bg.jpg') center center;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background: #000;
+            cursor: crosshair;
+        }
+        
+        .game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .game-ui > * {
+            pointer-events: auto;
+        }
+        
+        #startMenu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            border: 2px solid #4CAF50;
+        }
+        
+        #startMenu h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        #nicknameInput {
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            margin: 10px;
+            min-width: 200px;
+        }
+        
+        #playButton {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+        
+        #playButton:hover {
+            background: #45a049;
+        }
+        
+        #scoreDisplay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+        
+        #connectionStatus {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .connected {
+            background: rgba(76, 175, 80, 0.8);
+        }
+        
+        .disconnected {
+            background: rgba(244, 67, 54, 0.8);
+        }
+        
+        .connecting {
+            background: rgba(255, 193, 7, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas" width="1920" height="1080"></canvas>
+    
+    <!-- Game UI Overlay -->
+    <div class="game-ui">
+        <!-- Start Menu -->
+        <div id="startMenu">
+            <h1>🐍 Plither.io</h1>
+            <div>
+                <input type="text" id="nicknameInput" placeholder="Enter your nickname" maxlength="15">
+            </div>
+            <div>
+                <button id="playButton">Play</button>
+            </div>
+            <div style="margin-top: 15px; font-size: 12px; color: #ccc;">
+                Server: ws://127.0.0.1:8080
+            </div>
+        </div>
+        
+        <!-- Score Display -->
+        <div id="scoreDisplay" style="display: none;">
+            Score: <span id="score">0</span>
+        </div>
+        
+        <!-- Connection Status -->
+        <div id="connectionStatus" class="disconnected">
+            Disconnected
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/jquery-1.11.3.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="assets/js/i18n.js"></script>
+    <script src="assets/js/plither.js"></script>
+    
+    <script>
+        // Game initialization
+        $(document).ready(function() {
+            console.log('Plither client starting...');
+            
+            // Get DOM elements
+            const canvas = document.getElementById('gameCanvas');
+            const startMenu = document.getElementById('startMenu');
+            const nicknameInput = document.getElementById('nicknameInput');
+            const playButton = document.getElementById('playButton');
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const scoreElement = document.getElementById('score');
+            const connectionStatus = document.getElementById('connectionStatus');
+            
+            // Game state
+            let gameActive = false;
+            let currentScore = 0;
+            
+            // Resize canvas to fit window
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            
+            // Update connection status
+            function updateConnectionStatus(status, text) {
+                connectionStatus.className = status;
+                connectionStatus.textContent = text;
+            }
+            
+            // Start game function
+            function startGame() {
+                const nickname = nicknameInput.value.trim() || 'Anonymous';
+                
+                console.log('Starting game with nickname:', nickname);
+                startMenu.style.display = 'none';
+                scoreDisplay.style.display = 'block';
+                gameActive = true;
+                
+                // Initialize Plither game if the function exists
+                if (window.startPlitherGame) {
+                    window.startPlitherGame(nickname);
+                } else if (window.initGame) {
+                    window.initGame(nickname);
+                } else {
+                    console.log('Plither game functions not found - make sure plither.js loaded correctly');
+                    updateConnectionStatus('connecting', 'Connecting...');
+                    
+                    // Try to connect to server directly
+                    try {
+                        const ws = new WebSocket('ws://127.0.0.1:8080');
+                        
+                        ws.onopen = function() {
+                            console.log('Connected to game server');
+                            updateConnectionStatus('connected', 'Connected');
+                        };
+                        
+                        ws.onclose = function() {
+                            console.log('Disconnected from game server');
+                            updateConnectionStatus('disconnected', 'Disconnected');
+                        };
+                        
+                        ws.onerror = function(error) {
+                            console.error('WebSocket error:', error);
+                            updateConnectionStatus('disconnected', 'Connection Failed');
+                        };
+                        
+                        ws.onmessage = function(event) {
+                            console.log('Received:', event.data);
+                            // Handle game messages here
+                        };
+                        
+                    } catch (error) {
+                        console.error('Failed to connect:', error);
+                        updateConnectionStatus('disconnected', 'Connection Failed');
+                    }
+                }
+            }
+            
+            // Event listeners
+            playButton.addEventListener('click', startGame);
+            
+            nicknameInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    startGame();
+                }
+            });
+            
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Initialize
+            resizeCanvas();
+            nicknameInput.focus();
+            
+            console.log('Plither client initialized');
+            console.log('Make sure your iiegor server is running on port 8080');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+{
+    "serverType": "http",
+    "webserverPort": 3001,
+    "serverPort": 8080
+}

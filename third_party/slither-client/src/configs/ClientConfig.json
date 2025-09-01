@@ -1,0 +1,5 @@
+{
+	"serverType": "http",
+	"webserverPort": 80,
+	"serverPort": 433
+}
